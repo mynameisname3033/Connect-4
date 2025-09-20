@@ -35,6 +35,7 @@ void init_cell_data()
 
 void init_buckets()
 {
+	constexpr int NUM_BUCKETS = 5;
 	memset(BUCKET_MASKS, 0, sizeof(BUCKET_MASKS));
 	for (int i = 0; i < 42; ++i)
 	{

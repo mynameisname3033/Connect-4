@@ -40,22 +40,22 @@ static int get_threat_score(uint64_t bb1, uint64_t bb2)
 	uint64_t h2 = bb1 & (bb1 >> 7);
 	uint64_t h3 = h2 & (bb1 >> 14);
 	score += 10 * __popcnt64((h2 << 7 & empties) | (h2 >> 7 & empties));
-	score += 50 * __popcnt64((h3 << 7 & empties) | (h3 >> 7 & empties));
+	score += 30 * __popcnt64((h3 << 7 & empties) | (h3 >> 7 & empties));
 
 	uint64_t v2 = bb1 & (bb1 >> 1);
 	uint64_t v3 = v2 & (bb1 >> 2);
 	score += 10 * __popcnt64((v2 << 1 & empties) | (v2 >> 1 & empties));
-	score += 50 * __popcnt64((v3 << 1 & empties) | (v3 >> 1 & empties));
+	score += 30 * __popcnt64((v3 << 1 & empties) | (v3 >> 1 & empties));
 
 	uint64_t d2 = bb1 & (bb1 >> 6);
 	uint64_t d3 = d2 & (bb1 >> 12);
 	score += 10 * __popcnt64((d2 << 6 & empties) | (d2 >> 6 & empties));
-	score += 50 * __popcnt64((d3 << 6 & empties) | (d3 >> 6 & empties));
+	score += 30 * __popcnt64((d3 << 6 & empties) | (d3 >> 6 & empties));
 
 	uint64_t a2 = bb1 & (bb1 >> 8);
 	uint64_t a3 = a2 & (bb1 >> 16);
 	score += 10 * __popcnt64((a2 << 8 & empties) | (a2 >> 8 & empties));
-	score += 50 * __popcnt64((a3 << 8 & empties) | (a3 >> 8 & empties));
+	score += 30 * __popcnt64((a3 << 8 & empties) | (a3 >> 8 & empties));
 
 	score += check_fork(h2, empties, 7);
 	score += check_fork(v2, empties, 1);

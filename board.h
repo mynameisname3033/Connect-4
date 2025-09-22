@@ -2,16 +2,16 @@
 
 struct board
 {
-	uint64_t bb_x = 0;
-	uint64_t bb_o = 0;
-
-	int heights[7] = { 0, 7, 14, 21, 28, 35, 42 };
-	int num_moves = 0;
+	uint64_t bb_x;
+	uint64_t bb_o;
+	int num_moves;
 
 	private:
+		int heights[7];
 		bool is_winning(uint64_t bb) const;
-
+		
 	public:
+		board();
 		void print() const;
 		bool place_piece(bool is_x, int col);
 		void remove_piece(bool is_x, int col);

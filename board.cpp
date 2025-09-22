@@ -4,14 +4,16 @@
 
 using namespace std;
 
+board::board() : bb_x(0), bb_o(0), num_moves(0), heights{ 0, 7, 14, 21, 28, 35, 42 } {};
+
 void board::print() const
 {
-	for (int row = 0; row < 6; ++row)
+	for (int row = 5; row >= 0; --row)
 	{
 		cout << "|";
 		for (int col = 0; col < 7; ++col)
 		{
-			int index = col * 7 + (5 - row);
+			int index = col * 7 + row;
 			if (bb_o & (1ULL << index))
 			{
 				cout << "\033[1;31mO\033[39m|";

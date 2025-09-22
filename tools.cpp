@@ -17,6 +17,7 @@ constexpr int CELL_WEIGHTS[6][7] =
 static uint64_t CELL_MASKS[42];
 static int CELL_VALUES[42];
 uint64_t BUCKET_MASKS[5];
+constexpr uint64_t FULL_MASK = (1ULL << 42) - 1;
 
 void init_cell_data()
 {
@@ -46,18 +47,6 @@ void init_buckets()
 		BUCKET_MASKS[b] |= CELL_MASKS[i];
 	}
 }
-
-constexpr uint64_t FULL_MASK = (1ULL << 42) - 1;
-constexpr uint64_t COL_MASKS[7] =
-{
-	0b1111111ULL << (0 * 7),
-	0b1111111ULL << (1 * 7),
-	0b1111111ULL << (2 * 7),
-	0b1111111ULL << (3 * 7),
-	0b1111111ULL << (4 * 7),
-	0b1111111ULL << (5 * 7),
-	0b1111111ULL << (6 * 7)
-};
 
 static inline uint64_t splitmix64(uint64_t x)
 {

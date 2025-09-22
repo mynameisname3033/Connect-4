@@ -260,15 +260,15 @@ void bot_turn(board& game_board)
 		uint64_t hash = hash_board(game_board.bb_x, game_board.bb_o);
 		auto it = transposition_table.find(hash);
 		if (it != transposition_table.end())
-		{
+			{
 			const TT_entry& e = it->second;
 			tt_best_move = e.best_move;
 		}
 
 		if (tt_best_move != -1 && !game_board.is_full(tt_best_move) && tt_best_move != pv_move)
-		{
+				{
 			move_order.emplace_back(999999, tt_best_move);
-		}
+				}
 
 		for (int col = 0; col < 7; ++col)
 		{

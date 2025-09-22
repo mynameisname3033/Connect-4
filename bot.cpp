@@ -102,7 +102,7 @@ static int bot_evaluate_board(board& game_board, int depth, int endgame)
 	return score;
 }
 
-static int bot_minimax_recursive(board& game_board, int depth, bool is_maximizing, int alpha, int beta, int depth_limit)
+static int bot_minimax(board& game_board, int depth, bool is_maximizing, int alpha, int beta, int depth_limit)
 {
 	int endgame = game_board.check_endgame();
 	if (depth >= depth_limit || endgame != 0)
@@ -153,7 +153,7 @@ static int bot_minimax_recursive(board& game_board, int depth, bool is_maximizin
 		{
 			if (game_board.place_piece(false, col))
 			{
-				int score = bot_minimax_recursive(game_board, depth + 1, false, alpha, beta, depth_limit);
+				int score = bot_minimax(game_board, depth + 1, false, alpha, beta, depth_limit);
 				game_board.remove_piece(false, col);
 
 				if (score > best_score)
@@ -190,7 +190,7 @@ static int bot_minimax_recursive(board& game_board, int depth, bool is_maximizin
 		{
 			if (game_board.place_piece(true, col))
 			{
-				int score = bot_minimax_recursive(game_board, depth + 1, true, alpha, beta, depth_limit);
+				int score = bot_minimax(game_board, depth + 1, true, alpha, beta, depth_limit);
 				game_board.remove_piece(true, col);
 
 				if (score < best_score)
@@ -290,7 +290,7 @@ void bot_turn(board& game_board)
 			if (!game_board.is_full(col))
 			{
 				game_board.place_piece(false, col);
-				int score = bot_minimax_recursive(game_board, 1, false, MIN_INT, MAX_INT, depth);
+				int score = bot_minimax(game_board, 1, false, MIN_INT, MAX_INT, depth);
 				game_board.remove_piece(false, col);
 
 				if (score > best_score_at_depth)

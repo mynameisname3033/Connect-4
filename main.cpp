@@ -82,6 +82,6 @@ int main()
 			print_endgame(true);
 		}
 	}
-
+	
 	return 0;
 }

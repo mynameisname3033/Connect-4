@@ -19,7 +19,7 @@ struct TT_entry
 
 static unordered_map<uint64_t, TT_entry> transposition_table;
 
-constexpr float MAX_SEARCH_TIME = 2;
+constexpr float MAX_SEARCH_TIME = 1;
 constexpr int MAX_DEPTH = 42;
 constexpr int MAX_INT = numeric_limits<int>::max();
 constexpr int MIN_INT = -MAX_INT;
@@ -260,15 +260,15 @@ void bot_turn(board& game_board)
 		uint64_t hash = hash_board(game_board.bb_x, game_board.bb_o);
 		auto it = transposition_table.find(hash);
 		if (it != transposition_table.end())
-		{
+			{
 			const TT_entry& e = it->second;
 			tt_best_move = e.best_move;
 		}
 
 		if (tt_best_move != -1 && !game_board.is_full(tt_best_move) && tt_best_move != pv_move)
-		{
+				{
 			move_order.emplace_back(999999, tt_best_move);
-		}
+				}
 
 		for (int col = 0; col < 7; ++col)
 		{

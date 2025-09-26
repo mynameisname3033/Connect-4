@@ -3,7 +3,7 @@
 
 using namespace std;
 
-static constexpr float CELL_EFFECT = 5;
+static constexpr float CELL_EFFECT = 4;
 static constexpr int CELL_WEIGHTS[6][7] =
 {
 	{ 3, 4, 5, 7, 5, 4, 3 },

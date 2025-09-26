@@ -26,14 +26,9 @@ constexpr int MAX_DEPTH = 42;
 constexpr int MAX_INT = numeric_limits<int>::max();
 constexpr int MIN_INT = -MAX_INT;
 
-static inline int check_fork(uint64_t two_in_row, uint64_t empties, int shift, int heights[7])
+static inline int accessibility_score(uint64_t mask, int heights[7], int base_value)
 {
-	uint64_t left_open = (two_in_row << shift) & empties;
-	uint64_t right_open = (two_in_row >> shift) & empties;
-	uint64_t both_open = left_open & right_open;
-
 	int score = 0;
-	uint64_t mask = both_open;
 	while (mask)
 	{
 		int idx = lsb_index(mask);
@@ -46,9 +41,21 @@ static inline int check_fork(uint64_t two_in_row, uint64_t empties, int shift, i
 			continue;
 
 		int needed = row - heights[col];
-		score += 120 - (needed * 20);
+		if (needed < 0)
+			continue;
+
+		int weight = max(0, 120 - needed * 20);
+		score += (base_value * weight) / 120;
 	}
 	return score;
+}
+
+static inline int check_fork(uint64_t two_in_row, uint64_t empties, int shift, int heights[7])
+{
+	uint64_t left_open = (two_in_row << shift) & empties;
+	uint64_t right_open = (two_in_row >> shift) & empties;
+	uint64_t both_open = left_open & right_open;
+	return accessibility_score(both_open, heights, 120);
 }
 
 static int get_threat_score(uint64_t bb1, uint64_t bb2, int heights[7])
@@ -58,23 +65,23 @@ static int get_threat_score(uint64_t bb1, uint64_t bb2, int heights[7])
 
 	uint64_t h2 = bb1 & (bb1 >> 7);
 	uint64_t h3 = h2 & (bb1 >> 14);
-	score += 10 * popcount64((h2 << 7 & empties) | (h2 >> 7 & empties));
-	score += 30 * popcount64((h3 << 7 & empties) | (h3 >> 7 & empties));
+	score += accessibility_score((h2 << 7 & empties) | (h2 >> 7 & empties), heights, 10);
+	score += accessibility_score((h3 << 7 & empties) | (h3 >> 7 & empties), heights, 30);
 
 	uint64_t v2 = bb1 & (bb1 >> 1);
 	uint64_t v3 = v2 & (bb1 >> 2);
-	score += 10 * popcount64((v2 << 1 & empties) | (v2 >> 1 & empties));
-	score += 30 * popcount64((v3 << 1 & empties) | (v3 >> 1 & empties));
+	score += accessibility_score((v2 << 1 & empties) | (v2 >> 1 & empties), heights, 10);
+	score += accessibility_score((v3 << 1 & empties) | (v3 >> 1 & empties), heights, 30);
 
 	uint64_t d2 = bb1 & (bb1 >> 6);
 	uint64_t d3 = d2 & (bb1 >> 12);
-	score += 10 * popcount64((d2 << 6 & empties) | (d2 >> 6 & empties));
-	score += 30 * popcount64((d3 << 6 & empties) | (d3 >> 6 & empties));
+	score += accessibility_score((d2 << 6 & empties) | (d2 >> 6 & empties), heights, 10);
+	score += accessibility_score((d3 << 6 & empties) | (d3 >> 6 & empties), heights, 30);
 
 	uint64_t a2 = bb1 & (bb1 >> 8);
 	uint64_t a3 = a2 & (bb1 >> 16);
-	score += 10 * popcount64((a2 << 8 & empties) | (a2 >> 8 & empties));
-	score += 30 * popcount64((a3 << 8 & empties) | (a3 >> 8 & empties));
+	score += accessibility_score((a2 << 8 & empties) | (a2 >> 8 & empties), heights, 10);
+	score += accessibility_score((a3 << 8 & empties) | (a3 >> 8 & empties), heights, 30);
 
 	score += check_fork(h2, empties, 7, heights);
 	score += check_fork(v2, empties, 1, heights);

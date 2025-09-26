@@ -13,6 +13,12 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Header Files\Bot">
+      <UniqueIdentifier>{611d35d4-aeea-46bf-8d8d-8608e7d8f875}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Bot">
+      <UniqueIdentifier>{1d254b2f-cad4-4776-9c12-69ff8399234a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -22,10 +28,13 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="bot.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Bot</Filter>
     </ClCompile>
-    <ClCompile Include="tools.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="buckets.cpp">
+      <Filter>Source Files\Bot</Filter>
+    </ClCompile>
+    <ClCompile Include="TT_entry.cpp">
+      <Filter>Source Files\Bot</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -33,10 +42,13 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="bot.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\Bot</Filter>
     </ClInclude>
-    <ClInclude Include="tools.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="TT_entry.h">
+      <Filter>Header Files\Bot</Filter>
+    </ClInclude>
+    <ClInclude Include="buckets.h">
+      <Filter>Header Files\Bot</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

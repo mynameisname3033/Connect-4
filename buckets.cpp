@@ -1,10 +1,10 @@
 #include <array>
-#include "tools.h"
+#include "buckets.h"
 
 using namespace std;
 
 static constexpr float CELL_EFFECT = 5;
-constexpr int CELL_WEIGHTS[6][7] =
+static constexpr int CELL_WEIGHTS[6][7] =
 {
 	{ 3, 4, 5, 7, 5, 4, 3 },
 	{ 4, 6, 8, 11, 8, 6, 4 },
@@ -14,10 +14,10 @@ constexpr int CELL_WEIGHTS[6][7] =
 	{ 3, 4, 5, 7, 5, 4, 3 }
 };
 
+constexpr uint64_t FULL_MASK = (1ULL << 42) - 1;
 static uint64_t CELL_MASKS[42];
 static int CELL_VALUES[42];
 uint64_t BUCKET_MASKS[5];
-constexpr uint64_t FULL_MASK = (1ULL << 42) - 1;
 
 void init_cell_data()
 {
@@ -46,19 +46,4 @@ void init_buckets()
 		if (b >= 5) b = 5 - 1;
 		BUCKET_MASKS[b] |= CELL_MASKS[i];
 	}
-}
-
-static inline uint64_t splitmix64(uint64_t x)
-{
-	x += 0x9e3779b97f4a7c15ULL;
-	x = (x ^ (x >> 30)) * 0xbf58476d1ce4e5b9ULL;
-	x = (x ^ (x >> 27)) * 0x94d049bb133111ebULL;
-	return x ^ (x >> 31);
-}
-
-uint64_t hash_board(uint64_t bb_x, uint64_t bb_o)
-{
-	uint64_t h1 = splitmix64(bb_x + 0x9e3779b97f4a7c15ULL);
-	uint64_t h2 = splitmix64(bb_o + 0x6a09e667f3bcc909ULL);
-	return h1 ^ (h2 + 0x9e3779b97f4a7c15ULL + (h1 << 6) + (h1 >> 2));
 }

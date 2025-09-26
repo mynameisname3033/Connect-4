@@ -1,12 +1,15 @@
 #include <iostream>
 #include "board.h"
-#include "tools.h"
+#include "buckets.h"
 
 using namespace std;
 
-board::board() : bb_x(0), bb_o(0), num_moves(0), heights{ 0, 7, 14, 21, 28, 35, 42 } {};
+uint64_t bb_x = 0;
+uint64_t bb_o = 0;
+int num_moves = 0;
+int heights[7] = { 0, 7, 14, 21, 28, 35, 42 };
 
-void board::print() const
+void print()
 {
 	for (int row = 5; row >= 0; --row)
 	{
@@ -33,7 +36,7 @@ void board::print() const
 	cout << "\033[0m" << endl;
 }
 
-bool board::place_piece(bool is_x, int col)
+bool place_piece(bool is_x, int col)
 {
 	if (is_full(col)) return false;
 
@@ -48,7 +51,7 @@ bool board::place_piece(bool is_x, int col)
 	return true;
 }
 
-void board::remove_piece(bool is_x, int col)
+void remove_piece(bool is_x, int col)
 {
 	--heights[col];
 	--num_moves;
@@ -59,7 +62,7 @@ void board::remove_piece(bool is_x, int col)
 		bb_o ^= (1ULL << heights[col]);
 }
 
-int board::check_endgame() const
+int check_endgame()
 {
 	if (is_winning(bb_x)) return 1;
 	if (is_winning(bb_o)) return -1;
@@ -67,7 +70,7 @@ int board::check_endgame() const
 	return 0;
 }
 
-bool board::is_winning(uint64_t bb) const
+bool is_winning(uint64_t bb)
 {
 	uint64_t m = bb & (bb >> 7);
 	if (m & (m >> 14)) return true;
@@ -84,7 +87,7 @@ bool board::is_winning(uint64_t bb) const
 	return false;
 }
 
-bool board::is_full(int col) const
+bool is_full(int col)
 {
 	return heights[col] == (col + 1) * 7 - 1;
 }

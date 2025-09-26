@@ -2,4 +2,4 @@
 
 #include "board.h"
 
-void bot_turn(board& game_board);
+void bot_turn();

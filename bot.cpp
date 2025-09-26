@@ -4,18 +4,20 @@
 #include <random>
 #include <intrin.h>
 
+#include "board.h"
 #include "bot.h"
-#include "tools.h"
+#include "buckets.h"
+#include "TT_entry.h"
+
+#ifdef _MSC_VER
+	static inline int popcount64(uint64_t x) { return (int)__popcnt64(x); }
+	static inline unsigned lsb_index(uint64_t x) { return (unsigned)_tzcnt_u64(x); }
+#else
+	static inline int popcount64(uint64_t x) { return __builtin_popcountll(x); }
+	static inline unsigned lsb_index(uint64_t x) { return (unsigned)__builtin_ctzll(x); }
+#endif
 
 using namespace std;
-
-struct TT_entry
-{
-	int value;
-	int best_move;
-	int depth_remaining;
-	uint8_t bound;
-};
 
 static unordered_map<uint64_t, TT_entry> transposition_table;
 
@@ -34,11 +36,14 @@ static inline int check_fork(uint64_t two_in_row, uint64_t empties, int shift, i
 	uint64_t mask = both_open;
 	while (mask)
 	{
-		int idx = _tzcnt_u64(mask);
+		int idx = lsb_index(mask);
 		mask &= (mask - 1);
 
 		int col = idx / 7;
 		int row = idx % 7;
+
+		if (row >= 6)
+			continue;
 
 		int needed = row - heights[col];
 		score += 120 - (needed * 20);
@@ -46,53 +51,40 @@ static inline int check_fork(uint64_t two_in_row, uint64_t empties, int shift, i
 	return score;
 }
 
-static int get_threat_score(board game_board, bool is_x)
+static int get_threat_score(uint64_t bb1, uint64_t bb2, int heights[7])
 {
-	uint64_t bb1;
-	uint64_t bb2;
-	if (is_x)
-	{
-		bb1 = game_board.bb_x;
-		bb2 = game_board.bb_o;
-	}
-	else
-	{
-		bb1 = game_board.bb_o;
-		bb2 = game_board.bb_x;
-	}
-
 	uint64_t empties = ~(bb1 | bb2);
 	int score = 0;
 
 	uint64_t h2 = bb1 & (bb1 >> 7);
 	uint64_t h3 = h2 & (bb1 >> 14);
-	score += 10 * __popcnt64((h2 << 7 & empties) | (h2 >> 7 & empties));
-	score += 30 * __popcnt64((h3 << 7 & empties) | (h3 >> 7 & empties));
+	score += 10 * popcount64((h2 << 7 & empties) | (h2 >> 7 & empties));
+	score += 30 * popcount64((h3 << 7 & empties) | (h3 >> 7 & empties));
 
 	uint64_t v2 = bb1 & (bb1 >> 1);
 	uint64_t v3 = v2 & (bb1 >> 2);
-	score += 10 * __popcnt64((v2 << 1 & empties) | (v2 >> 1 & empties));
-	score += 30 * __popcnt64((v3 << 1 & empties) | (v3 >> 1 & empties));
+	score += 10 * popcount64((v2 << 1 & empties) | (v2 >> 1 & empties));
+	score += 30 * popcount64((v3 << 1 & empties) | (v3 >> 1 & empties));
 
 	uint64_t d2 = bb1 & (bb1 >> 6);
 	uint64_t d3 = d2 & (bb1 >> 12);
-	score += 10 * __popcnt64((d2 << 6 & empties) | (d2 >> 6 & empties));
-	score += 30 * __popcnt64((d3 << 6 & empties) | (d3 >> 6 & empties));
+	score += 10 * popcount64((d2 << 6 & empties) | (d2 >> 6 & empties));
+	score += 30 * popcount64((d3 << 6 & empties) | (d3 >> 6 & empties));
 
 	uint64_t a2 = bb1 & (bb1 >> 8);
 	uint64_t a3 = a2 & (bb1 >> 16);
-	score += 10 * __popcnt64((a2 << 8 & empties) | (a2 >> 8 & empties));
-	score += 30 * __popcnt64((a3 << 8 & empties) | (a3 >> 8 & empties));
+	score += 10 * popcount64((a2 << 8 & empties) | (a2 >> 8 & empties));
+	score += 30 * popcount64((a3 << 8 & empties) | (a3 >> 8 & empties));
 
-	score += check_fork(h2, empties, 7, game_board.heights);
-	score += check_fork(v2, empties, 1, game_board.heights);
-	score += check_fork(d2, empties, 6, game_board.heights);
-	score += check_fork(a2, empties, 8, game_board.heights);
+	score += check_fork(h2, empties, 7, heights);
+	score += check_fork(v2, empties, 1, heights);
+	score += check_fork(d2, empties, 6, heights);
+	score += check_fork(a2, empties, 8, heights);
 
 	return score;
 }
 
-static int bot_evaluate_board(board& game_board, int depth, int endgame)
+static int bot_evaluate_board(int depth, int endgame)
 {
 	if (endgame == -1)
 	{
@@ -109,58 +101,54 @@ static int bot_evaluate_board(board& game_board, int depth, int endgame)
 
 	int score = 0;
 
-	uint64_t bb_x = game_board.bb_x;
-	uint64_t bb_o = game_board.bb_o;
-
 	int center_score = 0;
 	for (int b = 0; b < 5; b++)
 	{
 		int w = 3 + b * 3;
-		center_score += w * __popcnt64(bb_o & BUCKET_MASKS[b]);
-		center_score -= w * __popcnt64(bb_x & BUCKET_MASKS[b]);
+		center_score += w * popcount64(bb_o & BUCKET_MASKS[b]);
+		center_score -= w * popcount64(bb_x & BUCKET_MASKS[b]);
 	}
-	int moves_played = game_board.num_moves;
+	int moves_played = num_moves;
 	float phase = 1.0f - (moves_played / 42.0f);
 	score += (int)(center_score * phase);
 
-	score += get_threat_score(game_board, false);
-	score -= get_threat_score(game_board, true);
+	score += get_threat_score(bb_o, bb_x, heights);
+	score -= get_threat_score(bb_x, bb_o, heights);
 
 	return score;
 }
 
-static int bot_minimax(board& game_board, int depth, bool is_maximizing, int alpha, int beta, int depth_limit)
+static int bot_minimax(int depth, bool is_maximizing, int alpha, int beta, int depth_limit)
 {
-	int endgame = game_board.check_endgame();
+	int endgame = check_endgame();
 	if (depth >= depth_limit || endgame != 0)
 	{
-		return bot_evaluate_board(game_board, depth, endgame);
+		return bot_evaluate_board(depth, endgame);
 	}
 
 	int remaining = depth_limit - depth;
-	uint64_t hash = hash_board(game_board.bb_x, game_board.bb_o);
+	uint64_t hash = hash_board(bb_x, bb_o);
 	int move_order[7] = { 3, 2, 4, 1, 5, 0, 6 };
 
 	auto it = transposition_table.find(hash);
 	if (it != transposition_table.end())
 	{
-		const TT_entry& e = it->second;
+		const TT_entry& entry = it->second;
 
-		if (e.depth_remaining >= remaining)
+		if (entry.depth_remaining >= remaining)
 		{
-			if (e.bound == 0 ||
-				(e.bound == 1 && e.value >= beta) ||
-				(e.bound == 2 && e.value <= alpha))
+			if (entry.bound == 0 ||
+				(entry.bound == 1 && entry.value >= beta) ||
+				(entry.bound == 2 && entry.value <= alpha))
 			{
-				return e.value;
+				return entry.value;
 			}
 		}
-
-		if (e.best_move != -1)
+		if (entry.best_move != -1)
 		{
 			for (int i = 0; i < 7; ++i)
 			{
-				if (move_order[i] == e.best_move)
+				if (move_order[i] == entry.best_move)
 				{
 					swap(move_order[0], move_order[i]);
 					break;
@@ -178,10 +166,10 @@ static int bot_minimax(board& game_board, int depth, bool is_maximizing, int alp
 		int best_col = -1;
 		for (int col : move_order)
 		{
-			if (game_board.place_piece(false, col))
+			if (place_piece(false, col))
 			{
-				int score = bot_minimax(game_board, depth + 1, false, alpha, beta, depth_limit);
-				game_board.remove_piece(false, col);
+				int score = bot_minimax(depth + 1, false, alpha, beta, depth_limit);
+				remove_piece(false, col);
 
 				if (score > best_score)
 				{
@@ -215,10 +203,10 @@ static int bot_minimax(board& game_board, int depth, bool is_maximizing, int alp
 		int best_col = -1;
 		for (int col : move_order)
 		{
-			if (game_board.place_piece(true, col))
+			if (place_piece(true, col))
 			{
-				int score = bot_minimax(game_board, depth + 1, true, alpha, beta, depth_limit);
-				game_board.remove_piece(true, col);
+				int score = bot_minimax(depth + 1, true, alpha, beta, depth_limit);
+				remove_piece(true, col);
 
 				if (score < best_score)
 				{
@@ -248,13 +236,13 @@ static int bot_minimax(board& game_board, int depth, bool is_maximizing, int alp
 	}
 }
 
-void bot_turn(board& game_board)
+void bot_turn()
 {
 	auto start = chrono::high_resolution_clock::now();
 
-	if (game_board.num_moves == 0)
+	if (num_moves == 0)
 	{
-		game_board.place_piece(false, 3);
+		place_piece(false, 3);
 		auto end = chrono::high_resolution_clock::now();
 		chrono::duration<double> duration = end - start;
 		cout << "Bot played column " << 3 << " in " << duration.count() << " seconds" << endl;
@@ -278,13 +266,13 @@ void bot_turn(board& game_board)
 
 		vector<pair<int, int>> move_order;
 
-		if (pv_move != -1 && !game_board.is_full(pv_move))
+		if (pv_move != -1 && !is_full(pv_move))
 		{
 			move_order.emplace_back(1000000, pv_move);
 		}
 
 		int tt_best_move = -1;
-		uint64_t hash = hash_board(game_board.bb_x, game_board.bb_o);
+		uint64_t hash = hash_board(bb_x, bb_o);
 		auto it = transposition_table.find(hash);
 		if (it != transposition_table.end())
 		{
@@ -292,18 +280,18 @@ void bot_turn(board& game_board)
 			tt_best_move = e.best_move;
 		}
 
-		if (tt_best_move != -1 && !game_board.is_full(tt_best_move) && tt_best_move != pv_move)
+		if (tt_best_move != -1 && !is_full(tt_best_move) && tt_best_move != pv_move)
 		{
 			move_order.emplace_back(999999, tt_best_move);
 		}
 
 		for (int col = 0; col < 7; ++col)
 		{
-			if (!game_board.is_full(col))
+			if (!is_full(col))
 			{
-				game_board.place_piece(false, col);
-				int score = bot_evaluate_board(game_board, 0, game_board.check_endgame());
-				game_board.remove_piece(false, col);
+				place_piece(false, col);
+				int score = bot_evaluate_board(0, check_endgame());
+				remove_piece(false, col);
 				move_order.emplace_back(score, col);
 			}
 		}
@@ -314,11 +302,11 @@ void bot_turn(board& game_board)
 		{
 			int col = pair.second;
 
-			if (!game_board.is_full(col))
+			if (!is_full(col))
 			{
-				game_board.place_piece(false, col);
-				int score = bot_minimax(game_board, 1, false, MIN_INT, MAX_INT, depth);
-				game_board.remove_piece(false, col);
+				place_piece(false, col);
+				int score = bot_minimax(1, false, MIN_INT, MAX_INT, depth);
+				remove_piece(false, col);
 
 				if (score > best_score_at_depth)
 				{
@@ -352,7 +340,7 @@ void bot_turn(board& game_board)
 
 	if (final_best_col != -1)
 	{
-		game_board.place_piece(false, final_best_col);
+		place_piece(false, final_best_col);
 	}
 	else
 	{

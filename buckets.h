@@ -7,4 +7,3 @@ extern const uint64_t FULL_MASK;
 
 void init_cell_data();
 void init_buckets();
-uint64_t hash_board(uint64_t bb1, uint64_t bb2);

@@ -49,7 +49,7 @@ static inline int check_fork(uint64_t two_in_row, uint64_t empties, int shift, i
 static int get_threat_score(board game_board, bool is_x)
 {
 	uint64_t bb1;
-	uint16_t bb2;
+	uint64_t bb2;
 	if (is_x)
 	{
 		bb1 = game_board.bb_x;

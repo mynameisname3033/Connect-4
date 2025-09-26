@@ -4,7 +4,6 @@
 
 struct TT_entry
 {
-	uint64_t key;
 	int value;
 	int best_move;
 	int depth_remaining;

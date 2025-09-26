@@ -5,9 +5,9 @@ struct board
 	uint64_t bb_x;
 	uint64_t bb_o;
 	int num_moves;
+	int heights[7];
 
 	private:
-		int heights[7];
 		bool is_winning(uint64_t bb) const;
 		
 	public:

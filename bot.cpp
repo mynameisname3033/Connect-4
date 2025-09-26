@@ -24,16 +24,43 @@ constexpr int MAX_DEPTH = 42;
 constexpr int MAX_INT = numeric_limits<int>::max();
 constexpr int MIN_INT = -MAX_INT;
 
-static inline int check_fork(uint64_t two_in_row, uint64_t empties, int shift)
+static inline int check_fork(uint64_t two_in_row, uint64_t empties, int shift, int heights[7])
 {
 	uint64_t left_open = (two_in_row << shift) & empties;
 	uint64_t right_open = (two_in_row >> shift) & empties;
 	uint64_t both_open = left_open & right_open;
-	return 100 * __popcnt64(both_open);
+
+	int score = 0;
+	uint64_t mask = both_open;
+	while (mask)
+	{
+		int idx = _tzcnt_u64(mask);
+		mask &= (mask - 1);
+
+		int col = idx / 7;
+		int row = idx % 7;
+
+		int needed = row - heights[col];
+		score += 120 - (needed * 20);
+	}
+	return score;
 }
 
-static int get_threat_score(uint64_t bb1, uint64_t bb2)
+static int get_threat_score(board game_board, bool is_x)
 {
+	uint64_t bb1;
+	uint16_t bb2;
+	if (is_x)
+	{
+		bb1 = game_board.bb_x;
+		bb2 = game_board.bb_o;
+	}
+	else
+	{
+		bb1 = game_board.bb_o;
+		bb2 = game_board.bb_x;
+	}
+
 	uint64_t empties = ~(bb1 | bb2);
 	int score = 0;
 
@@ -57,10 +84,10 @@ static int get_threat_score(uint64_t bb1, uint64_t bb2)
 	score += 10 * __popcnt64((a2 << 8 & empties) | (a2 >> 8 & empties));
 	score += 30 * __popcnt64((a3 << 8 & empties) | (a3 >> 8 & empties));
 
-	score += check_fork(h2, empties, 7);
-	score += check_fork(v2, empties, 1);
-	score += check_fork(d2, empties, 6);
-	score += check_fork(a2, empties, 8);
+	score += check_fork(h2, empties, 7, game_board.heights);
+	score += check_fork(v2, empties, 1, game_board.heights);
+	score += check_fork(d2, empties, 6, game_board.heights);
+	score += check_fork(a2, empties, 8, game_board.heights);
 
 	return score;
 }
@@ -96,8 +123,8 @@ static int bot_evaluate_board(board& game_board, int depth, int endgame)
 	float phase = 1.0f - (moves_played / 42.0f);
 	score += (int)(center_score * phase);
 
-	score += get_threat_score(bb_o, bb_x);
-	score -= get_threat_score(bb_x, bb_o);
+	score += get_threat_score(game_board, false);
+	score -= get_threat_score(game_board, true);
 
 	return score;
 }

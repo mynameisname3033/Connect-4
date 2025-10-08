@@ -19,12 +19,12 @@
 
 using namespace std;
 
-static unordered_map<uint64_t, TT_entry> transposition_table;
-
 constexpr float MAX_SEARCH_TIME = 1;
 constexpr int MAX_DEPTH = 42;
 constexpr int MAX_INT = numeric_limits<int>::max();
 constexpr int MIN_INT = -MAX_INT;
+
+static unordered_map<uint64_t, TT_entry> transposition_table;
 
 static inline int accessibility_score(uint64_t mask, int heights[7], int base_value)
 {
@@ -135,6 +135,7 @@ static int bot_minimax(int depth, bool is_maximizing, int alpha, int beta, int d
 
 	int remaining = depth_limit - depth;
 	uint64_t hash = hash_board(bb_x, bb_o);
+
 	int move_order[7] = { 3, 2, 4, 1, 5, 0, 6 };
 
 	auto it = transposition_table.find(hash);

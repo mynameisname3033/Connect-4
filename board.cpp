@@ -9,7 +9,7 @@ uint64_t bb_o = 0;
 int num_moves = 0;
 int heights[7] = { 0, 7, 14, 21, 28, 35, 42 };
 
-void print()
+void print_board()
 {
 	for (int row = 5; row >= 0; --row)
 	{

@@ -17,27 +17,27 @@ static void player_turn()
 	}
 }
 
-static void print_endgame(bool print_board)
+static void print_endgame(bool should_print_board)
 {
 	int endgame = check_endgame();
 	if (endgame == 1)
 	{
-		if (print_board)
-			print();
+		if (should_print_board)
+			print_board();
 		cout << "You win!" << endl;
 		exit(0);
 	}
 	else if (endgame == -1)
 	{
-		if (print_board)
-			print();
+		if (should_print_board)
+			print_board();
 		cout << "Bot wins!" << endl;
 		exit(0);
 	}
 	else if (endgame == 2)
 	{
-		if (print_board)
-			print();
+		if (should_print_board)
+			print_board();
 		cout << "It's a tie!" << endl;
 		exit(0);
 	}
@@ -60,22 +60,17 @@ int main()
 		{
 			player_turn();
 			print_endgame(true);
-		}
-		else
-		{
-			bot_turn();
-			print();
-			print_endgame(false);
-		}
 
-		if (player_first)
-		{
 			bot_turn();
-			print();
+			print_board();
 			print_endgame(false);
 		}
 		else
 		{
+			bot_turn();
+			print_board();
+			print_endgame(false);
+
 			player_turn();
 			print_endgame(true);
 		}

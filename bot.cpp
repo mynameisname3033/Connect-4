@@ -25,6 +25,7 @@ constexpr int MAX_INT = numeric_limits<int>::max();
 constexpr int MIN_INT = -MAX_INT;
 
 static unordered_map<uint64_t, TT_entry> transposition_table;
+static bool tt_reserved = false;
 
 static inline int accessibility_score(uint64_t mask, int heights[7], int base_value)
 {
@@ -247,6 +248,12 @@ static int bot_minimax(int depth, bool is_maximizing, int alpha, int beta, int d
 void bot_turn()
 {
 	auto start = chrono::high_resolution_clock::now();
+
+	if (!tt_reserved)
+	{
+		transposition_table.reserve(1 << 24);
+		tt_reserved = true;
+	}
 
 	if (num_moves == 0)
 	{

@@ -5,7 +5,7 @@ extern uint64_t bb_o;
 extern int num_moves;
 extern int heights[7];
 
-void print();
+void print_board();
 bool place_piece(bool is_x, int col);
 void remove_piece(bool is_x, int col);
 int check_endgame();

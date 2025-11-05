@@ -5,8 +5,8 @@
 struct TT_entry
 {
 	int value;
-	int best_move;
-	int depth_remaining;
+	uint8_t depth_remaining;
+	uint8_t best_move;
 	uint8_t bound;
 };
 

@@ -125,8 +125,8 @@
   <ItemGroup>
     <ClCompile Include="board.cpp" />
     <ClCompile Include="bot.cpp" />
-    <ClCompile Include="main.cpp" />
     <ClCompile Include="buckets.cpp" />
+    <ClCompile Include="main.cpp" />
     <ClCompile Include="TT_entry.cpp" />
   </ItemGroup>
   <ItemGroup>

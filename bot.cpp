@@ -2,11 +2,10 @@
 #include <unordered_map>
 #include <chrono>
 #include <random>
-#include <intrin.h>
 
+#include "buckets.h"
 #include "board.h"
 #include "bot.h"
-#include "buckets.h"
 #include "TT_entry.h"
 
 #ifdef _MSC_VER
@@ -27,7 +26,7 @@ constexpr int MIN_INT = -MAX_INT;
 static unordered_map<uint64_t, TT_entry> transposition_table;
 static bool tt_reserved = false;
 
-static inline int accessibility_score(uint64_t mask, int heights[7], int base_value)
+static inline int accessibility_score(uint64_t mask, uint8_t heights[7], int base_value)
 {
 	int score = 0;
 	while (mask)
@@ -35,13 +34,13 @@ static inline int accessibility_score(uint64_t mask, int heights[7], int base_va
 		int idx = lsb_index(mask);
 		mask &= (mask - 1);
 
-		int col = idx / 7;
-		int row = idx % 7;
+		uint8_t col = idx / 7;
+		uint8_t row = idx % 7;
 
 		if (row >= 6)
 			continue;
 
-		int needed = row - heights[col];
+		uint8_t needed = row - heights[col];
 		if (needed < 0)
 			continue;
 
@@ -51,7 +50,7 @@ static inline int accessibility_score(uint64_t mask, int heights[7], int base_va
 	return score;
 }
 
-static inline int check_fork(uint64_t two_in_row, uint64_t empties, int shift, int heights[7])
+static inline int check_fork(uint64_t two_in_row, uint64_t empties, uint8_t shift, uint8_t heights[7])
 {
 	uint64_t left_open = (two_in_row << shift) & empties;
 	uint64_t right_open = (two_in_row >> shift) & empties;
@@ -59,7 +58,7 @@ static inline int check_fork(uint64_t two_in_row, uint64_t empties, int shift, i
 	return accessibility_score(both_open, heights, 120);
 }
 
-static int get_threat_score(uint64_t bb1, uint64_t bb2, int heights[7])
+static int get_threat_score(uint64_t bb1, uint64_t bb2, uint8_t heights[7])
 {
 	uint64_t empties = ~(bb1 | bb2);
 	int score = 0;
@@ -92,7 +91,7 @@ static int get_threat_score(uint64_t bb1, uint64_t bb2, int heights[7])
 	return score;
 }
 
-static int bot_evaluate_board(int depth, int endgame)
+static int bot_evaluate_board(uint8_t depth, uint8_t endgame)
 {
 	if (endgame == -1)
 	{
@@ -110,15 +109,14 @@ static int bot_evaluate_board(int depth, int endgame)
 	int score = 0;
 
 	int center_score = 0;
-	for (int b = 0; b < 5; b++)
+	for (int b = 0; b < 4; ++b)
 	{
-		int w = 3 + b * 3;
-		center_score += w * popcount64(bb_o & BUCKET_MASKS[b]);
-		center_score -= w * popcount64(bb_x & BUCKET_MASKS[b]);
+		int pop_o = popcount64(bb_o & BUCKET_MASKS[b]);
+		int pop_x = popcount64(bb_x & BUCKET_MASKS[b]);
+		center_score += BUCKET_WEIGHTS[b] * (pop_o - pop_x);
 	}
-	int moves_played = num_moves;
-	float phase = 1.0f - (moves_played / 42.0f);
-	score += (int)(center_score * phase);
+	float phase = 1.0f - (num_moves / 42.0f);
+	score += static_cast<int>(center_score * phase);
 
 	score += get_threat_score(bb_o, bb_x, heights);
 	score -= get_threat_score(bb_x, bb_o, heights);
@@ -126,18 +124,18 @@ static int bot_evaluate_board(int depth, int endgame)
 	return score;
 }
 
-static int bot_minimax(int depth, bool is_maximizing, int alpha, int beta, int depth_limit)
+static int bot_minimax(uint8_t depth, bool is_maximizing, int alpha, int beta, uint8_t depth_limit)
 {
-	int endgame = check_endgame();
+	int8_t endgame = check_endgame();
 	if (depth >= depth_limit || endgame != 0)
 	{
 		return bot_evaluate_board(depth, endgame);
 	}
 
-	int remaining = depth_limit - depth;
+	uint8_t remaining = depth_limit - depth;
 	uint64_t hash = hash_board(bb_x, bb_o);
 
-	int move_order[7] = { 3, 2, 4, 1, 5, 0, 6 };
+	uint8_t move_order[7] = { 3, 2, 4, 1, 5, 0, 6 };
 
 	auto it = transposition_table.find(hash);
 	if (it != transposition_table.end())
@@ -172,8 +170,8 @@ static int bot_minimax(int depth, bool is_maximizing, int alpha, int beta, int d
 	if (is_maximizing)
 	{
 		int best_score = MIN_INT;
-		int best_col = -1;
-		for (int col : move_order)
+		int8_t best_col = -1;
+		for (uint8_t col : move_order)
 		{
 			if (place_piece(false, col))
 			{
@@ -209,8 +207,8 @@ static int bot_minimax(int depth, bool is_maximizing, int alpha, int beta, int d
 	else
 	{
 		int best_score = MAX_INT;
-		int best_col = -1;
-		for (int col : move_order)
+		int8_t best_col = -1;
+		for (uint8_t col : move_order)
 		{
 			if (place_piece(true, col))
 			{
@@ -260,18 +258,18 @@ void bot_turn()
 		place_piece(false, 3);
 		auto end = chrono::high_resolution_clock::now();
 		chrono::duration<double> duration = end - start;
-		cout << "Bot played column " << 3 << " in " << duration.count() << " seconds" << endl;
+		cout << "Bot played column " << 4 << " in " << duration.count() << " seconds" << endl;
 		cout << "Transposition table size: " << transposition_table.size() << endl;
 		return;
 	}
 
 	static mt19937 rng(random_device{}());
 
-	int move_order[7] = { 3, 2, 4, 1, 5, 0, 6 };
+	uint8_t move_order[7] = { 3, 2, 4, 1, 5, 0, 6 };
 
-	int pv_move = -1;
+	int8_t pv_move = -1;
 	vector<int> best_cols;
-	int final_best_col = -1;
+	int8_t final_best_col = -1;
 	int depth;
 
 	for (depth = 1; depth <= MAX_DEPTH; ++depth)
@@ -279,14 +277,15 @@ void bot_turn()
 		int best_score_at_depth = MIN_INT;
 		best_cols.clear();
 
-		vector<pair<int, int>> move_order;
+		vector<pair<int, uint8_t>> move_order;
+		move_order.reserve(7);
 
 		if (pv_move != -1 && !is_full(pv_move))
 		{
 			move_order.emplace_back(1000000, pv_move);
 		}
 
-		int tt_best_move = -1;
+		int8_t tt_best_move = -1;
 		uint64_t hash = hash_board(bb_x, bb_o);
 		auto it = transposition_table.find(hash);
 		if (it != transposition_table.end())
@@ -300,7 +299,7 @@ void bot_turn()
 			move_order.emplace_back(999999, tt_best_move);
 		}
 
-		for (int col = 0; col < 7; ++col)
+		for (uint8_t col = 0; col < 7; ++col)
 		{
 			if (!is_full(col))
 			{
@@ -313,9 +312,9 @@ void bot_turn()
 
 		sort(move_order.begin(), move_order.end(), greater<>());
 
-		for (pair<int, int> pair : move_order)
+		for (pair<int, uint8_t> pair : move_order)
 		{
-			int col = pair.second;
+			uint8_t col = pair.second;
 
 			if (!is_full(col))
 			{

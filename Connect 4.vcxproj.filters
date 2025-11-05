@@ -30,10 +30,10 @@
     <ClCompile Include="bot.cpp">
       <Filter>Source Files\Bot</Filter>
     </ClCompile>
-    <ClCompile Include="buckets.cpp">
+    <ClCompile Include="TT_entry.cpp">
       <Filter>Source Files\Bot</Filter>
     </ClCompile>
-    <ClCompile Include="TT_entry.cpp">
+    <ClCompile Include="buckets.cpp">
       <Filter>Source Files\Bot</Filter>
     </ClCompile>
   </ItemGroup>

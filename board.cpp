@@ -1,22 +1,23 @@
 #include <iostream>
 #include "board.h"
-#include "buckets.h"
 
 using namespace std;
 
+static constexpr uint64_t FULL_MASK = (1ULL << 42) - 1;
+
 uint64_t bb_x = 0;
 uint64_t bb_o = 0;
-int num_moves = 0;
-int heights[7] = { 0, 7, 14, 21, 28, 35, 42 };
+uint8_t num_moves = 0;
+uint8_t heights[7] = { 0, 7, 14, 21, 28, 35, 42 };
 
 void print_board()
 {
-	for (int row = 5; row >= 0; --row)
+	for (int8_t row = 5; row >= 0; --row)
 	{
 		cout << "|";
-		for (int col = 0; col < 7; ++col)
+		for (int8_t col = 0; col < 7; ++col)
 		{
-			int index = col * 7 + row;
+			uint8_t index = col * 7 + row;
 			if (bb_o & (1ULL << index))
 			{
 				cout << "\033[1;31mO\033[39m|";
@@ -36,7 +37,7 @@ void print_board()
 	cout << "\033[0m" << endl;
 }
 
-bool place_piece(bool is_x, int col)
+bool place_piece(bool is_x, uint8_t col)
 {
 	if (is_full(col)) return false;
 
@@ -51,7 +52,7 @@ bool place_piece(bool is_x, int col)
 	return true;
 }
 
-void remove_piece(bool is_x, int col)
+void remove_piece(bool is_x, uint8_t col)
 {
 	--heights[col];
 	--num_moves;
@@ -62,7 +63,7 @@ void remove_piece(bool is_x, int col)
 		bb_o ^= (1ULL << heights[col]);
 }
 
-int check_endgame()
+int8_t check_endgame()
 {
 	if (is_winning(bb_x)) return 1;
 	if (is_winning(bb_o)) return -1;
@@ -87,7 +88,7 @@ bool is_winning(uint64_t bb)
 	return false;
 }
 
-bool is_full(int col)
+bool is_full(uint8_t col)
 {
 	return heights[col] == (col + 1) * 7 - 1;
 }

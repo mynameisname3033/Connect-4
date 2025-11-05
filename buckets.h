@@ -2,8 +2,7 @@
 
 #include <cstdint>
 
-extern uint64_t BUCKET_MASKS[5];
-extern const uint64_t FULL_MASK;
+extern uint64_t BUCKET_MASKS[4];
+extern int BUCKET_WEIGHTS[4];
 
-void init_cell_data();
-void init_buckets();
+extern inline void init_buckets();

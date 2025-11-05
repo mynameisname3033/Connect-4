@@ -1,5 +1,6 @@
 #include <iostream>
 #include "bot.h"
+#include "board.h"
 #include "buckets.h"
 
 using namespace std;
@@ -19,7 +20,7 @@ static void player_turn()
 
 static void print_endgame(bool should_print_board)
 {
-	int endgame = check_endgame();
+	int8_t endgame = check_endgame();
 	if (endgame == 1)
 	{
 		if (should_print_board)
@@ -45,7 +46,6 @@ static void print_endgame(bool should_print_board)
 
 int main()
 {
-	init_cell_data();
 	init_buckets();
 
 	string r;

@@ -1,22 +1,24 @@
-#include <iostream>
+﻿#include <iostream>
 #include <unordered_map>
 #include <chrono>
 #include <random>
 
-#include "buckets.h"
 #include "board.h"
 #include "bot.h"
 #include "TT_entry.h"
 
-#ifdef _MSC_VER
-	static inline int popcount64(uint64_t x) { return (int)__popcnt64(x); }
-	static inline unsigned lsb_index(uint64_t x) { return (unsigned)_tzcnt_u64(x); }
-#else
-	static inline int popcount64(uint64_t x) { return __builtin_popcountll(x); }
-	static inline unsigned lsb_index(uint64_t x) { return (unsigned)__builtin_ctzll(x); }
-#endif
-
 using namespace std;
+
+static constexpr int CELL_WEIGHTS[49] =
+{
+	3, 4, 5, 5, 4, 3, 0,
+	4, 6, 8, 8, 6, 4, 0,
+	5, 8, 10, 10, 8, 5, 0,
+	7, 11, 13, 13, 11, 7, 0,
+	5, 8, 10, 10, 8, 5, 0,
+	4, 6, 8, 8, 6, 4, 0,
+	3, 4, 5, 5, 4, 3, 0
+};
 
 constexpr float MAX_SEARCH_TIME = 1;
 constexpr int MAX_DEPTH = 42;
@@ -25,71 +27,6 @@ constexpr int MIN_INT = -MAX_INT;
 
 static unordered_map<uint64_t, TT_entry> transposition_table;
 static bool tt_reserved = false;
-
-static inline int accessibility_score(uint64_t mask, uint8_t heights[7], int base_value)
-{
-	int score = 0;
-	while (mask)
-	{
-		int idx = lsb_index(mask);
-		mask &= (mask - 1);
-
-		uint8_t col = idx / 7;
-		uint8_t row = idx % 7;
-
-		if (row >= 6)
-			continue;
-
-		uint8_t needed = row - heights[col];
-		if (needed < 0)
-			continue;
-
-		int weight = max(0, 120 - needed * 20);
-		score += (base_value * weight) / 120;
-	}
-	return score;
-}
-
-static inline int check_fork(uint64_t two_in_row, uint64_t empties, uint8_t shift, uint8_t heights[7])
-{
-	uint64_t left_open = (two_in_row << shift) & empties;
-	uint64_t right_open = (two_in_row >> shift) & empties;
-	uint64_t both_open = left_open & right_open;
-	return accessibility_score(both_open, heights, 120);
-}
-
-static int get_threat_score(uint64_t bb1, uint64_t bb2, uint8_t heights[7])
-{
-	uint64_t empties = ~(bb1 | bb2);
-	int score = 0;
-
-	uint64_t h2 = bb1 & (bb1 >> 7);
-	uint64_t h3 = h2 & (bb1 >> 14);
-	score += accessibility_score((h2 << 7 & empties) | (h2 >> 7 & empties), heights, 10);
-	score += accessibility_score((h3 << 7 & empties) | (h3 >> 7 & empties), heights, 30);
-
-	uint64_t v2 = bb1 & (bb1 >> 1);
-	uint64_t v3 = v2 & (bb1 >> 2);
-	score += accessibility_score((v2 << 1 & empties) | (v2 >> 1 & empties), heights, 10);
-	score += accessibility_score((v3 << 1 & empties) | (v3 >> 1 & empties), heights, 30);
-
-	uint64_t d2 = bb1 & (bb1 >> 6);
-	uint64_t d3 = d2 & (bb1 >> 12);
-	score += accessibility_score((d2 << 6 & empties) | (d2 >> 6 & empties), heights, 10);
-	score += accessibility_score((d3 << 6 & empties) | (d3 >> 6 & empties), heights, 30);
-
-	uint64_t a2 = bb1 & (bb1 >> 8);
-	uint64_t a3 = a2 & (bb1 >> 16);
-	score += accessibility_score((a2 << 8 & empties) | (a2 >> 8 & empties), heights, 10);
-	score += accessibility_score((a3 << 8 & empties) | (a3 >> 8 & empties), heights, 30);
-
-	score += check_fork(h2, empties, 7, heights);
-	score += check_fork(v2, empties, 1, heights);
-	score += check_fork(d2, empties, 6, heights);
-	score += check_fork(a2, empties, 8, heights);
-
-	return score;
-}
 
 static int bot_evaluate_board(uint8_t depth, uint8_t endgame)
 {
@@ -109,17 +46,17 @@ static int bot_evaluate_board(uint8_t depth, uint8_t endgame)
 	int score = 0;
 
 	int center_score = 0;
-	for (int b = 0; b < 4; ++b)
+	for (int i = 0; i < 49; i++)
 	{
-		int pop_o = popcount64(bb_o & BUCKET_MASKS[b]);
-		int pop_x = popcount64(bb_x & BUCKET_MASKS[b]);
-		center_score += BUCKET_WEIGHTS[b] * (pop_o - pop_x);
+		uint64_t bit = 1ULL << i;
+
+		if (bb_o & bit)
+			center_score += CELL_WEIGHTS[i];
+		else if (bb_x & bit)
+			center_score -= CELL_WEIGHTS[i];
 	}
 	float phase = 1.0f - (num_moves / 42.0f);
 	score += static_cast<int>(center_score * phase);
-
-	score += get_threat_score(bb_o, bb_x, heights);
-	score -= get_threat_score(bb_x, bb_o, heights);
 
 	return score;
 }
@@ -366,4 +303,5 @@ void bot_turn()
 	chrono::duration<double> duration = end - start;
 	cout << "Bot played column " << (final_best_col + 1) << " in " << duration.count() << " seconds (depth " << depth << ")" << endl;
 	cout << "Transposition table size: " << transposition_table.size() << endl;
+	cout << "Heuristic evaluation: " << bot_evaluate_board(0, check_endgame()) << endl;
 }

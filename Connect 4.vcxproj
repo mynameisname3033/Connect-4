@@ -125,14 +125,12 @@
   <ItemGroup>
     <ClCompile Include="board.cpp" />
     <ClCompile Include="bot.cpp" />
-    <ClCompile Include="buckets.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="TT_entry.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="board.h" />
     <ClInclude Include="bot.h" />
-    <ClInclude Include="buckets.h" />
     <ClInclude Include="TT_entry.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

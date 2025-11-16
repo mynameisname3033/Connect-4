@@ -33,9 +33,6 @@
     <ClCompile Include="TT_entry.cpp">
       <Filter>Source Files\Bot</Filter>
     </ClCompile>
-    <ClCompile Include="buckets.cpp">
-      <Filter>Source Files\Bot</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="board.h">
@@ -45,9 +42,6 @@
       <Filter>Header Files\Bot</Filter>
     </ClInclude>
     <ClInclude Include="TT_entry.h">
-      <Filter>Header Files\Bot</Filter>
-    </ClInclude>
-    <ClInclude Include="buckets.h">
       <Filter>Header Files\Bot</Filter>
     </ClInclude>
   </ItemGroup>

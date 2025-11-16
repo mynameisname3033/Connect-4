@@ -1,7 +1,6 @@
 #include <iostream>
 #include "bot.h"
 #include "board.h"
-#include "buckets.h"
 
 using namespace std;
 
@@ -46,8 +45,6 @@ static void print_endgame(bool should_print_board)
 
 int main()
 {
-	init_buckets();
-
 	string r;
 	cout << "Do you want to go first? (y/n) ";
 	cin >> r;

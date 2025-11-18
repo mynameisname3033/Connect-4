@@ -46,7 +46,7 @@ static int bot_evaluate_board(uint8_t depth, uint8_t endgame)
 	int score = 0;
 
 	int center_score = 0;
-	for (int i = 0; i < 49; i++)
+	for (int i = 0; i < 49; ++i)
 	{
 		uint64_t bit = 1ULL << i;
 
@@ -186,7 +186,7 @@ void bot_turn()
 
 	if (!tt_reserved)
 	{
-		transposition_table.reserve(1 << 24);
+		transposition_table.reserve(20000000);
 		tt_reserved = true;
 	}
 
@@ -209,7 +209,7 @@ void bot_turn()
 	int8_t final_best_col = -1;
 	int depth;
 
-	for (depth = 1; depth <= MAX_DEPTH; ++depth)
+	for (depth = 1; depth <= min(MAX_DEPTH, 42 - num_moves); ++depth)
 	{
 		int best_score_at_depth = MIN_INT;
 		best_cols.clear();

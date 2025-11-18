@@ -45,6 +45,8 @@ static void print_endgame(bool should_print_board)
 
 int main()
 {
+	init_full_board_mask();
+
 	string r;
 	cout << "Do you want to go first? (y/n) ";
 	cin >> r;

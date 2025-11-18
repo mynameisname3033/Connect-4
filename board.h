@@ -5,6 +5,7 @@ extern uint64_t bb_o;
 extern uint8_t num_moves;
 extern uint8_t heights[7];
 
+void init_full_board_mask();
 void print_board();
 bool place_piece(bool is_x, uint8_t col);
 void remove_piece(bool is_x, uint8_t col);

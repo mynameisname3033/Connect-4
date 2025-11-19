@@ -30,7 +30,7 @@
     <ClCompile Include="bot.cpp">
       <Filter>Source Files\Bot</Filter>
     </ClCompile>
-    <ClCompile Include="TT_entry.cpp">
+    <ClCompile Include="bot2.cpp">
       <Filter>Source Files\Bot</Filter>
     </ClCompile>
   </ItemGroup>
@@ -42,6 +42,9 @@
       <Filter>Header Files\Bot</Filter>
     </ClInclude>
     <ClInclude Include="TT_entry.h">
+      <Filter>Header Files\Bot</Filter>
+    </ClInclude>
+    <ClInclude Include="bot2.h">
       <Filter>Header Files\Bot</Filter>
     </ClInclude>
   </ItemGroup>

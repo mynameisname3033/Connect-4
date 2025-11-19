@@ -1,11 +1,11 @@
-﻿#include <iostream>
+#include <iostream>
 #include <unordered_map>
 #include <chrono>
 #include <random>
 #include <array>
 
 #include "board.h"
-#include "bot.h"
+#include "bot2.h"
 #include "TT_entry.h"
 
 using namespace std;
@@ -40,13 +40,13 @@ static bool tt_reserved = false;
 
 static vector<uint64_t> lines;
 
-void bot::reset()
+void bot2::reset()
 {
 	transposition_table.clear();
 	tt_reserved = false;
 }
 
-void bot::init_4_in_a_row_lines()
+void bot2::init_4_in_a_row_lines()
 {
 	const int dirs[4][2] =
 	{
@@ -93,7 +93,7 @@ static int board_heuristic()
 		while (x)
 		{
 			int idx = _tzcnt_u64(x);
-			score -= CELL_WEIGHTS[idx];
+			score += CELL_WEIGHTS[idx];
 			x &= x - 1;
 		}
 
@@ -101,11 +101,12 @@ static int board_heuristic()
 		while (o)
 		{
 			int idx = _tzcnt_u64(o);
-			score += CELL_WEIGHTS[idx];
+			score -= CELL_WEIGHTS[idx];
 			o &= o - 1;
 		}
 
-		score = score * (42 - num_moves) / 42;
+		float phase = 1.0f - (num_moves / 42.0f);
+		score = static_cast<int>(score * phase);
 	}
 
 	{
@@ -119,8 +120,8 @@ static int board_heuristic()
 			int nx = __popcnt64(xb);
 			int no = __popcnt64(ob);
 
-			if (nx) score -= LINE_VALUES[nx];
-			else if (no) score += LINE_VALUES[no];
+			if (nx) score += LINE_VALUES[nx];
+			else if (no) score -= LINE_VALUES[no];
 		}
 	}
 
@@ -132,11 +133,11 @@ static int minimax(int depth, bool is_maximizing, int alpha, int beta, int depth
 	int endgame = check_endgame();
 	if (depth >= depth_limit || endgame != 0)
 	{
-		if (endgame == -1)
+		if (endgame == 1)
 		{
 			return 100000000 - depth;
 		}
-		else if (endgame == 1)
+		else if (endgame == -1)
 		{
 			return -100000000 + depth;
 		}
@@ -148,8 +149,9 @@ static int minimax(int depth, bool is_maximizing, int alpha, int beta, int depth
 		return board_heuristic();
 	}
 
-	int depth_remaining = depth_limit - depth;
+	int remaining = depth_limit - depth;
 	uint64_t hash = hash_board();
+
 	int move_order[7] = { 3, 2, 4, 1, 5, 0, 6 };
 
 	auto it = transposition_table.find(hash);
@@ -157,7 +159,7 @@ static int minimax(int depth, bool is_maximizing, int alpha, int beta, int depth
 	{
 		const TT_entry& entry = it->second;
 
-		if (entry.depth_remaining >= depth_remaining)
+		if (entry.depth_remaining >= remaining)
 		{
 			if (entry.bound == 0 ||
 				(entry.bound == 1 && entry.value >= beta) ||
@@ -189,10 +191,10 @@ static int minimax(int depth, bool is_maximizing, int alpha, int beta, int depth
 		int best_col = -1;
 		for (int col : move_order)
 		{
-			if (place_piece(false, col))
+			if (place_piece(true, col))
 			{
 				int score = minimax(depth + 1, false, alpha, beta, depth_limit);
-				remove_piece(false, col);
+				remove_piece(true, col);
 
 				if (score > best_score)
 				{
@@ -209,7 +211,7 @@ static int minimax(int depth, bool is_maximizing, int alpha, int beta, int depth
 		TT_entry entry = {};
 		entry.value = best_score;
 		entry.best_move = best_col;
-		entry.depth_remaining = depth_remaining;
+		entry.depth_remaining = remaining;
 		if (best_score <= alpha_orig)
 			entry.bound = 2;
 		else if (best_score >= beta_orig)
@@ -226,10 +228,10 @@ static int minimax(int depth, bool is_maximizing, int alpha, int beta, int depth
 		int best_col = -1;
 		for (int col : move_order)
 		{
-			if (place_piece(true, col))
+			if (place_piece(false, col))
 			{
 				int score = minimax(depth + 1, true, alpha, beta, depth_limit);
-				remove_piece(true, col);
+				remove_piece(false, col);
 
 				if (score < best_score)
 				{
@@ -246,7 +248,7 @@ static int minimax(int depth, bool is_maximizing, int alpha, int beta, int depth
 		TT_entry entry = {};
 		entry.value = best_score;
 		entry.best_move = best_col;
-		entry.depth_remaining = depth_remaining;
+		entry.depth_remaining = remaining;
 		if (best_score <= alpha_orig)
 			entry.bound = 2;
 		else if (best_score >= beta_orig)
@@ -259,7 +261,7 @@ static int minimax(int depth, bool is_maximizing, int alpha, int beta, int depth
 	}
 }
 
-void bot::turn()
+void bot2::turn()
 {
 	auto start = chrono::high_resolution_clock::now();
 
@@ -271,10 +273,10 @@ void bot::turn()
 
 	if (num_moves == 0)
 	{
-		place_piece(false, 3);
+		place_piece(true, 3);
 		auto end = chrono::high_resolution_clock::now();
 		chrono::duration<double> duration = end - start;
-		cout << "Bot1 played column " << 4 << " in " << duration.count() << " seconds" << endl;
+		cout << "Bot2 played column " << 4 << " in " << duration.count() << " seconds" << endl;
 		cout << "Transposition table size: " << transposition_table.size() << endl;
 		cout << "Heuristic evaluation: " << board_heuristic() << endl;
 		return;
@@ -315,10 +317,10 @@ void bot::turn()
 
 		for (int col = 0; col < 7; ++col)
 		{
-			if (col != final_best_col && col != tt_best_move && place_piece(false, col))
+			if (col != final_best_col && col != tt_best_move && place_piece(true, col))
 			{
 				int score = board_heuristic();
-				remove_piece(false, col);
+				remove_piece(true, col);
 				move_order.emplace_back(score, col);
 			}
 		}
@@ -330,10 +332,10 @@ void bot::turn()
 		{
 			int col = pair.second;
 
-			if (place_piece(false, col))
+			if (place_piece(true, col))
 			{
 				int score = minimax(0, false, MIN_INT, MAX_INT, depth);
-				remove_piece(false, col);
+				remove_piece(true, col);
 
 				if (score > best_score_at_depth)
 				{
@@ -366,17 +368,17 @@ void bot::turn()
 
 	if (final_best_col != -1)
 	{
-		place_piece(false, final_best_col);
+		place_piece(true, final_best_col);
 	}
 	else
 	{
-		cerr << "Bot1 could not find a valid move." << endl;
+		cerr << "Bot2 could not find a valid move." << endl;
 		exit(1);
 	}
 
 	auto end = chrono::high_resolution_clock::now();
 	chrono::duration<double> duration = end - start;
-	cout << "Bot1 played column " << (final_best_col + 1) << " in " << duration.count() << " seconds (depth " << depth << ")" << endl;
+	cout << "Bot2 played column " << (final_best_col + 1) << " in " << duration.count() << " seconds (depth " << depth << ")" << endl;
 	cout << "Transposition table size: " << transposition_table.size() << endl;
 	cout << "Heuristic evaluation: " << board_heuristic() << endl;
 	cout << "Minimax evaluation: " << best_score_at_depth;

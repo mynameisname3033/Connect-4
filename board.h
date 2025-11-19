@@ -7,8 +7,12 @@ extern uint8_t heights[7];
 
 void init_full_board_mask();
 void print_board();
-bool place_piece(bool is_x, uint8_t col);
-void remove_piece(bool is_x, uint8_t col);
-int8_t check_endgame();
-bool is_winning(uint64_t bb);
-bool is_full(uint8_t col);
+
+bool place_piece(bool is_x, int col);
+void remove_piece(bool is_x, int col);
+void reset_board();
+
+inline bool col_is_full(int col);
+int check_endgame();
+
+uint64_t hash_board();

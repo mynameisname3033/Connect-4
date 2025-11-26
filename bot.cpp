@@ -105,7 +105,8 @@ static int board_heuristic()
 			o &= o - 1;
 		}
 
-		score = score * (42 - num_moves) / 42;
+		float phase = 1.0f - (num_moves / 42.0f);
+		score = static_cast<int>(score * phase);
 	}
 
 	{

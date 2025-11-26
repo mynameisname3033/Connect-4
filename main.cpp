@@ -1,4 +1,5 @@
 ﻿#include <iostream>
+#include <chrono>
 #include "bot.h"
 #include "bot2.h"
 #include "board.h"
@@ -45,10 +46,9 @@ static void print_endgame(bool should_print_board)
 	}
 }
 
-static void randomize_board(int min_moves = 5, int max_moves = 15)
+static void randomize_board(int min_moves = 5, int max_moves = 15, bool x_first = true)
 {
 	int moves_to_make = min_moves + (rand() % (max_moves - min_moves + 1));
-	bool is_x_turn = true;
 
 	for (int i = 0; i < moves_to_make; ++i)
 	{
@@ -64,15 +64,15 @@ static void randomize_board(int min_moves = 5, int max_moves = 15)
 			break;
 
 		int col = legal_cols[rand() % count];
-		place_piece(is_x_turn, col);
+		place_piece(x_first, col);
 
 		if (check_endgame() != 0)
 		{
-			remove_piece(is_x_turn, col);
+			remove_piece(x_first, col);
 			break;
 		}
 
-		is_x_turn = !is_x_turn;
+		x_first = !x_first;
 	}
 }
 
@@ -90,12 +90,10 @@ static void bot_test()
 		bot::reset();
 		bot2::reset();
 
-		randomize_board(0, 1);
-		print_board();
+		bool bot1_turn = round % 2 == 1;
 
-		bool bot1_turn = (round % 2 == 1);
-		if ((num_moves % 2 == 1) != bot1_turn)
-			bot1_turn = !bot1_turn;
+		randomize_board(0, 1, !bot1_turn);
+		print_board();
 
 		while (true)
 		{
@@ -122,7 +120,6 @@ static void bot_test()
 			}
 
 			bot1_turn = !bot1_turn;
-
 			print_board();
 		}
 	}
@@ -136,7 +133,9 @@ int main()
 {
 	init_full_board_mask();
 	bot::init_4_in_a_row_lines();
+	bot::init_center_evaluation_phases();
 	bot2::init_4_in_a_row_lines();
+	bot2::init_center_evaluation_phases();
 
 	//string r;
 	//cout << "Do you want to go first? (y/n) ";

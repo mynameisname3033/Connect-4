@@ -5,13 +5,7 @@
 
 using namespace std;
 
-uint64_t FULL_BOARD_MASK = 0;
-
-uint64_t bb_x = 0;
-uint64_t bb_o = 0;
-uint8_t num_moves = 0;
-uint8_t heights[7] = { 0, 7, 14, 21, 28, 35, 42 };
-
+static uint64_t FULL_BOARD_MASK = 0;
 static constexpr uint64_t TOP_MASK[7] =
 {
 	1ULL << 5,
@@ -23,13 +17,18 @@ static constexpr uint64_t TOP_MASK[7] =
 	1ULL << 47
 };
 
+uint64_t bb_x = 0;
+uint64_t bb_o = 0;
+int num_moves = 0;
+static int heights[7] = { 0, 7, 14, 21, 28, 35, 42 };
+
 void init_full_board_mask()
 {
 	for (int col = 0; col < 7; ++col)
 	{
 		for (int row = 0; row < 6; ++row)
 		{
-			uint8_t index = col * 7 + row;
+			int index = col * 7 + row;
 			FULL_BOARD_MASK |= (1ULL << index);
 		}
 	}
@@ -42,19 +41,19 @@ void print_board()
 		cout << "|";
 		for (int col = 0; col < 7; ++col)
 		{
-			uint8_t index = col * 7 + row;
+			int index = col * 7 + row;
 			uint64_t bit = 1ULL << index;
 			if (bb_o & bit)
 			{
-				cout << "\033[1;31mO\033[39m|";
+				cout << "\033[1;31mO\033[0m|";
 			}
 			else if (bb_x & bit)
 			{
-				cout << "\033[1;34mX\033[39m|";
+				cout << "\033[1;34mX\033[0m|";
 			}
 			else
 			{
-				cout << "\033[39m |";
+				cout << "\033[0m |";
 			}
 		}
 		cout << endl;
@@ -94,7 +93,7 @@ void reset_board()
 	bb_x = 0;
 	bb_o = 0;
 	num_moves = 0;
-	for (uint8_t col = 0; col < 7; ++col)
+	for (int col = 0; col < 7; ++col)
 	{
 		heights[col] = col * 7;
 	}

@@ -24,9 +24,9 @@ static constexpr int CELL_WEIGHTS[49] =
 static constexpr int LINE_VALUES[5] =
 {
 	0,
-	10,
-	50,
-	500,
+	5,
+	15,
+	150,
 	100000000
 };
 
@@ -38,12 +38,21 @@ static constexpr int MIN_INT = -MAX_INT;
 static unordered_map<uint64_t, TT_entry> transposition_table;
 static bool tt_reserved = false;
 
-static vector<uint64_t> lines;
+static float center_evaluation_phases[43];
+static uint64_t lines[69];
 
 void bot::reset()
 {
 	transposition_table.clear();
 	tt_reserved = false;
+}
+
+void bot::init_center_evaluation_phases()
+{
+	for (int i = 0; i <= 42; ++i)
+	{
+		center_evaluation_phases[i] = 1.0f - (i / 42.0f);
+	}
 }
 
 void bot::init_4_in_a_row_lines()
@@ -56,6 +65,7 @@ void bot::init_4_in_a_row_lines()
 		{-1, 1}
 	};
 
+	int line = 0;
 	for (int r = 0; r < 6; ++r)
 	{
 		for (int c = 0; c < 7; ++c)
@@ -78,7 +88,7 @@ void bot::init_4_in_a_row_lines()
 					int index = cc * 7 + rr;
 					mask |= (1ULL << index);
 				}
-				lines.push_back(mask);
+				lines[line++] = mask;
 			}
 		}
 	}
@@ -105,12 +115,11 @@ static int board_heuristic()
 			o &= o - 1;
 		}
 
-		float phase = 1.0f - (num_moves / 42.0f);
-		score = static_cast<int>(score * phase);
+		score = static_cast<int>(score * center_evaluation_phases[num_moves]);
 	}
 
 	{
-		for (uint64_t mask : lines)
+		for (uint64_t& mask : lines)
 		{
 			uint64_t xb = bb_x & mask;
 			uint64_t ob = bb_o & mask;
@@ -270,17 +279,6 @@ void bot::turn()
 		tt_reserved = true;
 	}
 
-	if (num_moves == 0)
-	{
-		place_piece(false, 3);
-		auto end = chrono::high_resolution_clock::now();
-		chrono::duration<double> duration = end - start;
-		cout << "Bot1 played column " << 4 << " in " << duration.count() << " seconds" << endl;
-		cout << "Transposition table size: " << transposition_table.size() << endl;
-		cout << "Heuristic evaluation: " << board_heuristic() << endl;
-		return;
-	}
-
 	static mt19937 rng(random_device{}());
 
 	vector<int> best_cols;
@@ -309,18 +307,21 @@ void bot::turn()
 			tt_best_move = e.best_move;
 		}
 
-		if (tt_best_move != -1 && !col_is_full(tt_best_move) && tt_best_move != final_best_col)
+		if (tt_best_move != -1 && !col_is_full(tt_best_move) && (move_order.empty() || move_order[0].second != tt_best_move))
 		{
-			move_order.emplace_back(999999, tt_best_move);
+			move_order.push_back({ 999999, tt_best_move });
 		}
 
 		for (int col = 0; col < 7; ++col)
 		{
-			if (col != final_best_col && col != tt_best_move && place_piece(false, col))
+			if (col == tt_best_move || !move_order.empty() && move_order[0].second == col)
+				continue;
+
+			if (place_piece(false, col))
 			{
 				int score = board_heuristic();
 				remove_piece(false, col);
-				move_order.emplace_back(score, col);
+				move_order.push_back({ score, col });
 			}
 		}
 
@@ -385,9 +386,9 @@ void bot::turn()
 	int moves_until_loss = 100000000 - best_score_at_depth;
 	int moves_until_win = best_score_at_depth + 100000000;
 	if (moves_until_loss <= 50)
-		cout << " (forced loss in " << moves_until_loss << " plies)";
+		cout << " (forced loss)";
 	else if (moves_until_win <= 50)
-		cout << " (forced win in " << moves_until_win << " plies)";
+		cout << " (forced win)";
 
 	cout << endl;
 }

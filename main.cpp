@@ -84,7 +84,7 @@ static void bot_test()
 
 	srand((unsigned)time(nullptr));
 
-	for (int round = 1; round <= 100; ++round)
+	for (int round = 1; round <= 50; ++round)
 	{
 		reset_board();
 		bot::reset();
@@ -92,7 +92,7 @@ static void bot_test()
 
 		bool bot1_turn = round % 2 == 1;
 
-		randomize_board(0, 1, !bot1_turn);
+		randomize_board(2, 5, !bot1_turn);
 		print_board();
 
 		while (true)
@@ -137,35 +137,35 @@ int main()
 	bot2::init_4_in_a_row_lines();
 	bot2::init_center_evaluation_phases();
 
-	//string r;
-	//cout << "Do you want to go first? (y/n) ";
-	//cin >> r;
-	//bool player_first = r == "y";
-	//cout << endl;
+	string r;
+	cout << "Do you want to go first? (y/n) ";
+	cin >> r;
+	bool player_first = r == "y";
+	cout << endl;
 
-	//while (true)
-	//{
-	//	if (player_first)
-	//	{
-	//		player_turn();
-	//		print_endgame(true);
+	while (true)
+	{
+		if (player_first)
+		{
+			player_turn();
+			print_endgame(true);
 
-	//		bot::turn();
-	//		print_board();
-	//		print_endgame(false);
-	//	}
-	//	else
-	//	{
-	//		bot::turn();
-	//		print_board();
-	//		print_endgame(false);
+			bot::turn();
+			print_board();
+			print_endgame(false);
+		}
+		else
+		{
+			bot::turn();
+			print_board();
+			print_endgame(false);
 
-	//		player_turn();
-	//		print_endgame(true);
-	//	}
-	//}
+			player_turn();
+			print_endgame(true);
+		}
+	}
 
-	bot_test();
+	//bot_test();
 	
 	return 0;
 }

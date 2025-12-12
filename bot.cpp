@@ -30,10 +30,13 @@ static constexpr int LINE_VALUES[5] =
 	100000000
 };
 
-static constexpr float MAX_SEARCH_TIME = .1;
+static constexpr float MAX_SEARCH_TIME = 1;
 static constexpr int MAX_DEPTH = 42;
 static constexpr int MAX_INT = numeric_limits<int>::max();
 static constexpr int MIN_INT = -MAX_INT;
+
+static constexpr int SEARCH_EXTENSION = 2;
+static constexpr int MAX_QUIESCENCE_DEPTH = 6;
 
 static unordered_map<uint64_t, TT_entry> transposition_table;
 static bool tt_reserved = false;
@@ -51,7 +54,7 @@ void bot::init_center_evaluation_phases()
 {
 	for (int i = 0; i <= 42; ++i)
 	{
-		center_evaluation_phases[i] = 1.0f - (i / 42.0f);
+		center_evaluation_phases[i] = 0.4f + 0.6f * (1.0f - i / 42.0f);
 	}
 }
 
@@ -94,7 +97,7 @@ void bot::init_4_in_a_row_lines()
 	}
 }
 
-static int board_heuristic()
+static inline int board_heuristic()
 {
 	int score = 0;
 
@@ -137,23 +140,59 @@ static int board_heuristic()
 	return score;
 }
 
-static int minimax(int depth, bool is_maximizing, int alpha, int beta, int depth_limit)
+static inline bool is_playable_square(int index)
+{
+	int row = index % 7;
+	if (row == 0) return true;
+	return (bb_x | bb_o) & (1ULL << (index - 1));
+}
+
+static inline bool has_playable_threats()
+{
+	uint64_t occ = bb_x | bb_o;
+
+	for (uint64_t& mask : lines)
+	{
+		uint64_t xb = bb_x & mask;
+		uint64_t ob = bb_o & mask;
+
+		if (xb && ob) continue;
+
+		int nx = __popcnt64(xb);
+		int no = __popcnt64(ob);
+
+		if (nx == 3 || no == 3)
+		{
+			uint64_t empty = mask & ~occ;
+			int idx = _tzcnt_u64(empty);
+			if (is_playable_square(idx))
+				return true;
+		}
+	}
+
+	return false;
+}
+
+static int minimax(int depth, bool is_maximizing, int alpha, int beta, int depth_limit, int orig_depth_at_extension)
 {
 	int endgame = check_endgame();
-	if (depth >= depth_limit || endgame != 0)
+	if (endgame == -1)
 	{
-		if (endgame == -1)
-		{
-			return 100000000 - depth;
-		}
-		else if (endgame == 1)
-		{
-			return -100000000 + depth;
-		}
-		else if (endgame == 2)
-		{
-			return 0;
-		}
+		return 100000000 - depth;
+	}
+	else if (endgame == 1)
+	{
+		return -100000000 + depth;
+	}
+	else if (endgame == 2)
+	{
+		return 0;
+	}
+
+	if (depth >= depth_limit)
+	{
+		if (depth_limit - orig_depth_at_extension < MAX_QUIESCENCE_DEPTH && has_playable_threats())
+			return minimax(depth, is_maximizing, alpha, beta, depth_limit + SEARCH_EXTENSION, orig_depth_at_extension == 0 ? depth : orig_depth_at_extension);
 
 		return board_heuristic();
 	}
@@ -201,7 +240,7 @@ static int minimax(int depth, bool is_maximizing, int alpha, int beta, int depth
 		{
 			if (place_piece(false, col))
 			{
-				int score = minimax(depth + 1, false, alpha, beta, depth_limit);
+				int score = minimax(depth + 1, false, alpha, beta, depth_limit, orig_depth_at_extension);
 				remove_piece(false, col);
 
 				if (score > best_score)
@@ -238,7 +277,7 @@ static int minimax(int depth, bool is_maximizing, int alpha, int beta, int depth
 		{
 			if (place_piece(true, col))
 			{
-				int score = minimax(depth + 1, true, alpha, beta, depth_limit);
+				int score = minimax(depth + 1, true, alpha, beta, depth_limit, orig_depth_at_extension);
 				remove_piece(true, col);
 
 				if (score < best_score)
@@ -334,7 +373,7 @@ void bot::turn()
 
 			if (place_piece(false, col))
 			{
-				int score = minimax(0, false, MIN_INT, MAX_INT, depth);
+				int score = minimax(0, false, MIN_INT, MAX_INT, depth, 0);
 				remove_piece(false, col);
 
 				if (score > best_score_at_depth)
